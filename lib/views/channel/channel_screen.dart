@@ -84,6 +84,7 @@ class _ChannelScreenState extends State<ChannelScreen> {
 
                           Expanded(
                             child: ListView.builder(
+                              cacheExtent: MediaQuery.of(context).size.height*3,
                               itemCount: controller.itemCount,
                               controller: controller.lstController,
                               reverse: true,

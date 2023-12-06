@@ -43,5 +43,8 @@ const greyColor = Color(0xff17191c);
 const dividerGreyColor = Color(0x3B000000);
 const greyColor2 = Color(0xFF3A3F47);
 const buttonGreyColor = Color(0xFF323232); // #323232
+const progressColor = Color(0xFF334257); // #176B87
+
+
 
  const blackColor = Color(0xff101010);

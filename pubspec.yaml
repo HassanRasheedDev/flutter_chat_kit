@@ -65,6 +65,11 @@ dependencies:
   audio_waveforms: ^1.0.4
   file_picker: ^6.1.1
   mime: ^1.0.4
+  easy_image_viewer: ^1.2.1
+  insta_image_viewer: ^1.0.2
+  photo_view: ^0.14.0
+  image_zoom_on_move: ^1.0.0
+  image_zoomer: ^0.0.3
 #  firebase_core_platform_interface: ^4.6.0
 
 dev_dependencies:

@@ -51,6 +51,7 @@ ThemeData lightTheme = ThemeData(
   ),
 
   cardTheme: CardTheme(
+    color: Colors.white,
     shape: RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(4.0),
     ),
