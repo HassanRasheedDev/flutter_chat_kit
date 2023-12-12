@@ -38,6 +38,11 @@ extension DateUtil on int {
 }
 
 
+extension DirectoryUtil on String {
+  bool isDirectoryPath(userId){
+    return contains(userId) ? true : false;
+  }
+}
 
 
 

@@ -1,1 +1,1 @@
-var messagesPayloadRequestSize = 20;
+var messagesPayloadRequestSize = 30;

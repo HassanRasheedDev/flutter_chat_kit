@@ -183,11 +183,27 @@ class ChannelListController extends GetxController with ChannelEventHandler{
 
   Future<void> loadChannel(channel) async {
     if( ((channel as MainChannel).unreadCount ?? 0) > 0){
+
+      // Update read count
+      int index = groupChannels.indexWhere((element) => (element as MainChannel).channelUrl == channel.channelUrl);
+      if(index != -1){
+        channel.unreadCount = 0;
+        groupChannels[index] = channel;
+      }
+
       query = GroupChannelListQuery()..channelUrls = [channel.channelUrl]
         ..order = GroupChannelListOrder.latestLastMessage;
       final res = await query.loadNext();
+
+      // Get latest values from server for channel
+      if(index != -1 && res.isNotEmpty == true){
+        groupChannels[index] = MainChannel.fromJson(res.first.toJson());
+      }
+
       dbHelper.insertChannelList(res);
+
       //loadChannelList();
+
     }
   }
 

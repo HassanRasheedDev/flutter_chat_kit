@@ -298,6 +298,7 @@ class MessageItem extends StatelessWidget {
   List<Widget> _avatarDefaultWidget(MainMessage message, BuildContext ctx, {required bool isLeftWidget}) {
     // return [const SizedBox(width: 2, height: 2)];
     var padding = message.type == CommandString.fileMessage ? 24.0 : 0.0;
+    var currentUser = getSendBirdLocalUser();
     return !_isContinuous(curr, next)
         ? [
             Padding(
@@ -305,7 +306,7 @@ class MessageItem extends StatelessWidget {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(64),
                 child: SenderAvatarView(
-                  channelImageUrl: message.senderProfileUrl,
+                  channelImageUrl: isLeftWidget  ? message.senderProfileUrl : currentUser?.profileUrl,
                   userId: message.senderUserId,
                   width: 26,
                   height: 26,

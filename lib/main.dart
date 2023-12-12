@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:isolate';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/foundation.dart';
@@ -11,12 +12,14 @@ import 'package:flutter_chat_kit/controllers/login_controller.dart';
 import 'package:flutter_chat_kit/models/channel_model.dart';
 import 'package:flutter_chat_kit/styles/light_theme.dart';
 import 'package:flutter_chat_kit/utils/extensions.dart';
+import 'package:flutter_chat_kit/utils/img_constants.dart';
 import 'package:flutter_chat_kit/utils/notification_service.dart';
 import 'package:flutter_chat_kit/views/channel/channel_screen.dart';
 import 'package:flutter_chat_kit/views/channel_list/channel_list_screen.dart';
 import 'package:flutter_chat_kit/views/login/login_screen.dart';
 import 'package:flutter_chat_kit/widgets/splash_widget.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:flutter_isolate/flutter_isolate.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
@@ -26,6 +29,7 @@ import 'package:sendbird_sdk/core/models/user.dart';
 import 'package:sendbird_sdk/sdk/sendbird_sdk_api.dart';
 
 import 'di/service_locator.dart';
+import 'isolates/images_file_isolate.dart';
 
 class MyHttpOverrides extends HttpOverrides {
   @override
@@ -35,41 +39,8 @@ class MyHttpOverrides extends HttpOverrides {
 }
 
 
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  HttpOverrides.global = MyHttpOverrides();
-  await Firebase.initializeApp();
-  setup();
-  userProfile = await getUserFromHive();
-
-  runApp(const MyApp());
-}
-
-
-Future<Map<String, dynamic>> getUserFromHive() async {
-  final hiveController = getIt<HiveController>();
-  Box userBox =  await hiveController.getHiveBox(HiveController.boxNameUsers);
-  var hiveMap = await userBox.get("profile") as Map<dynamic, dynamic>?;
-  Map<String, dynamic>? map = {};
-
-  (hiveMap)?.forEach((key, value) {
-    if(key is String) {
-      map.putIfAbsent(key, () => value);
-    }
-  });
-  return map;
-}
-
-User? getSendBirdLocalUser(){
-  if(sendbird.currentUser == null && userProfile?.isNotEmpty == true){
-    return User.fromJson(userProfile!);
-  }else{
-    return sendbird.currentUser;
-  }
-}
-
-
-Map<String,dynamic>? userProfile;
+String eAuthenticationKey = "";
+Map<String, dynamic>? userProfile;
 final sendbird = SendbirdSdk(appId: '68957A19-A398-44F8-AF6C-729692804B45');
 var isUserConnectedOnline = false.obs;
 var isInternetConnected = false.obs;
@@ -78,6 +49,31 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 final connector = kIsWeb ? null : createPushConnector();
 final appState = AppState();
 late AssetImage assetImage;
+
+// Used to store channel images in a map so that we can avoid File() --> object creations
+var channelImages = {};
+
+// Used to stop calling api again if already in queue
+var httpImageDownloadRequestsInQueue = [];
+
+
+String get authenticationKey => eAuthenticationKey;
+
+
+registerImageDownloadIsolate() async {
+  await FlutterIsolate.spawn(downloadImages, "");
+}
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  HttpOverrides.global = MyHttpOverrides();
+  await Firebase.initializeApp();
+  setup();
+  userProfile = await getUserFromHive();
+  registerImageDownloadIsolate();
+
+  runApp(const MyApp());
+}
 
 class AppState with ChangeNotifier {
   bool didRegisterToken = false;
@@ -114,7 +110,6 @@ class MyAppState extends State<MyApp> {
         }
         final rawData = data.data;
         appState.setDestination(rawData['sendbird']['channel']['channel_url']);
-
       },
       onResume: (data) async {
         //called when user tap on push notification
@@ -160,12 +155,9 @@ class MyAppState extends State<MyApp> {
     super.didChangeDependencies();
   }
 
-  
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-
-    
     return MaterialApp(
       builder: EasyLoading.init(),
       debugShowCheckedModeBanner: false,
@@ -180,17 +172,16 @@ class MyAppState extends State<MyApp> {
               future: getUserProfile(),
               builder: (BuildContext context, AsyncSnapshot<dynamic> snapshot) {
                 // return getRespectiveWidget(snapshot);
-                if(snapshot.connectionState == ConnectionState.waiting){
+                if (snapshot.connectionState == ConnectionState.waiting) {
                   return const SplashWidget();
-                }else{
-                  if(snapshot.data!= null){
+                } else {
+                  if (snapshot.data != null) {
                     return const ChannelListScreen();
-                  }else{
+                  } else {
                     return const LoginScreen();
                   }
                 }
-              }
-          ),
+              }),
           '/channel_list': (context) => const ChannelListScreen(),
           '/channel': (context) =>
               ChannelScreen(channel: settings.arguments as MainChannel),
@@ -206,20 +197,21 @@ class MyAppState extends State<MyApp> {
 
   Future<dynamic> getUserProfile() async {
     final loginController = getIt<LoginController>();
-    if(userProfile?.isNotEmpty == true){
+    if (userProfile?.isNotEmpty == true) {
       return userProfile;
-    }else{
-      return await loginController.login(userProfile?["user_id"], userProfile?["nickname"]);
+    } else {
+      return await loginController.login(
+          userProfile?["user_id"], userProfile?["nickname"]);
     }
   }
 
   Widget getRespectiveWidget(AsyncSnapshot<User> snapshot) {
-    if(snapshot.connectionState == ConnectionState.waiting){
+    if (snapshot.connectionState == ConnectionState.waiting) {
       return const Scaffold();
-    }else{
-      if(snapshot.data!= null){
+    } else {
+      if (snapshot.data != null) {
         return const ChannelListScreen();
-      }else{
+      } else {
         return const LoginScreen();
       }
     }
@@ -229,16 +221,15 @@ class MyAppState extends State<MyApp> {
     final internetChecker = getIt<InternetChecker>();
     // Listen for changes in internet connection
     internetChecker.onInternetConnectionChange.listen((bool isConnected) async {
-
       if (kDebugMode) {
         print('Internet connection status changed. Is connected: $isConnected');
       }
 
-      if(isConnected){
+      if (isConnected) {
         // Connecting user....
         isInternetConnected.value = true;
         await makeConnectionRequest();
-      }else{
+      } else {
         isInternetConnected.value = false;
         isUserConnectedOnline.value = false;
       }
@@ -246,13 +237,11 @@ class MyAppState extends State<MyApp> {
   }
 
   void preCacheImages(BuildContext context) {
-   precacheImage(assetImage, context);
+    precacheImage(assetImage, context);
+    ImageConstant.precachePlaceHolders(context);
+
   }
-
 }
-
-
-
 
 Future<void> makeConnectionRequest() async {
   final hiveController = getIt<HiveController>();
@@ -260,17 +249,23 @@ Future<void> makeConnectionRequest() async {
   if (kDebugMode) {
     print('Connecting user with sendbird');
   }
-  Box userBox =  await hiveController.getHiveBox(HiveController.boxNameUsers);
+  Box userBox = await hiveController.getHiveBox(HiveController.boxNameUsers);
   final userProfile = await userBox.get("profile");
-  if(userProfile != null){
+  if (userProfile != null) {
     var user = await loginController.login(userProfile["user_id"], userProfile["nickname"]);
     isUserConnectedOnline.value = true;
+
+    // The is auth key required to fetch files from server
+    final sdk = SendbirdSdk().getInternal();
+    final eKey = sdk.sessionManager.getEKey();
+    eAuthenticationKey = eKey ?? "";
+
     if (kDebugMode) {
-      print('User connected: ${user.userId} , Connection status  ${user.connectionStatus.name}');
+      print(
+          'User connected: ${user.userId} , Connection status  ${user.connectionStatus.name}');
     }
   }
 }
-
 
 Future<dynamic> handleBackgroundMessage(RemoteMessage data) async {
   if (kDebugMode) {
@@ -282,3 +277,26 @@ Future<dynamic> handleBackgroundMessage(RemoteMessage data) async {
     payload: data.data['data']['sendbird'],
   );
 }
+
+Future<Map<String, dynamic>> getUserFromHive() async {
+  final hiveController = getIt<HiveController>();
+  Box userBox = await hiveController.getHiveBox(HiveController.boxNameUsers);
+  var hiveMap = await userBox.get("profile") as Map<dynamic, dynamic>?;
+  Map<String, dynamic>? map = {};
+
+  (hiveMap)?.forEach((key, value) {
+    if (key is String) {
+      map.putIfAbsent(key, () => value);
+    }
+  });
+  return map;
+}
+
+User? getSendBirdLocalUser() {
+  if (sendbird.currentUser == null && userProfile?.isNotEmpty == true) {
+    return User.fromJson(userProfile!);
+  } else {
+    return sendbird.currentUser;
+  }
+}
+

@@ -12,6 +12,7 @@ import 'package:sendbird_sdk/sendbird_sdk.dart' hide ConnectionState;
 import 'package:http/http.dart' as http;
 
 import '../../utils/img_constants.dart';
+import 'package:image/image.dart' as IMG;
 
 class SenderAvatarView extends StatelessWidget {
   final String? channelImageUrl;
@@ -90,6 +91,7 @@ class SenderAvatarView extends StatelessWidget {
     } else {
       return Image(
           height: height,
+          fit: BoxFit.cover,
           width: width,
           image: const AssetImage('assets/images/user_image.png'));
     }
@@ -114,15 +116,25 @@ class SenderAvatarView extends StatelessWidget {
         print("downloading sender avatar::  $imageLink");
       }
 
-      if (imageLink.isNotEmpty) {
+      if (imageLink.isNotEmpty && !httpImageDownloadRequestsInQueue.contains(channelImageUrl) ) {
+        httpImageDownloadRequestsInQueue.add(imageLink);
         final response = await http.get(Uri.parse(imageLink));
         if (response.statusCode == 200) {
+
+          IMG.Image? img = IMG.decodeImage(response.bodyBytes);
+          IMG.Image resized = IMG.copyResize(img!, width: 100, height: 100);
+          Uint8List? resizedImg = Uint8List.fromList(IMG.encodeJpg(resized));
+
           final appDir = getUserProfileImagePath(userId ?? "");
           final file = await File(appDir).create(recursive: true);
-          await file.writeAsBytes(response.bodyBytes);
+          file.writeAsBytes(resizedImg);
 
           // Add new Image
           addNewImageInLocalList(file);
+
+          // Remove image from queue
+          httpImageDownloadRequestsInQueue.remove(imageLink);
+
 
           if (kDebugMode) {
             print('SA_Image downloaded and saved at: ${file.path}');

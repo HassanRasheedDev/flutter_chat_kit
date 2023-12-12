@@ -46,38 +46,14 @@ class UserMessageItem extends MessageItem {
         lightgreyColor3,
       ),
       sendingStatusIcon: (isMyMessage ?? false)
-          ? Icon(Icons.done_all,
-          color: curr.sendingStatus == MessageSendingStatus.succeeded
-              ? skyblueColor
-              : greyColor4,
+          ? Icon( curr.sendingStatusIcon,
+          color: greyColor4,
           size: 13.0)
           : null,
       style: TextStyles.txtProximaNovaBold14LineHeight20(greyColor5),
     ),
 
   );
-
-
-
-      // TODO: Basic message before
-      // Container(
-      //   decoration: BoxDecoration(
-      //     borderRadius: BorderRadius.circular(16),
-      //     color: (isMyMessage ?? false)
-      //         ? primaryColor
-      //         : Colors.black,
-      //   ),
-      //   padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      //   child: Text(
-      //     curr.message,
-      //     style: TextStyle(
-      //       fontSize: 14,
-      //       color: (isMyMessage ?? false)
-      //           ? Colors.white
-      //           : Colors.white,
-      //     ),
-      //   ),
-      // );
 
 
 }

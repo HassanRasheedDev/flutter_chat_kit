@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_chat_kit/controllers/channel_controller.dart';
 import 'package:flutter_chat_kit/models/message_model.dart';
 import 'package:flutter_chat_kit/styles/colors.dart';
+import 'package:flutter_chat_kit/utils/img_constants.dart';
 import 'package:flutter_chat_kit/views/channel/message_item.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:sendbird_sdk/constant/enums.dart';
 
+import '../../main.dart';
 import '../../styles/text_styles.dart';
 
 class FileMessageItem extends MessageItem {
@@ -37,13 +39,18 @@ class FileMessageItem extends MessageItem {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(12),
-            child: ((curr.localFileUrl != null && curr.localFileUrl?.isNotEmpty == true) && kIsWeb == false)
+            child: (curr.localFileUrl != null && curr.localFileUrl?.isNotEmpty == true)
                 ? SizedBox(
                     height: 160,
                     width: 240,
                     child: FittedBox(
                       fit: BoxFit.cover,
-                      child: Image.file(File((curr).localFileUrl!)),
+                      child:
+                      Image.file(
+                        channelImages[(curr).localFileUrl!] ?? File((curr).localFileUrl!),
+                        key: Key(curr.localFileUrl.toString()),
+                        gaplessPlayback: true,
+                      ),
                     ),
                   )
                 : CachedNetworkImage(
@@ -51,17 +58,8 @@ class FileMessageItem extends MessageItem {
                     width: 240,
                     fit: BoxFit.cover,
                     imageUrl: (curr).secureUrl ?? "",
-                    placeholder: (context, url) => Container(
-                      color: primaryColor,
-                      width: 30,
-                      height: 30,
-                      child: const Center(
-                        child: CircularProgressIndicator(
-                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                        ),
-                      ),
-                    ),
-                    errorWidget: (context, url, error) => const Icon(Icons.error),
+                    placeholder: (context, url) => ImageConstant.precachedPlaceHolder,
+                    errorWidget: (context, url, error) => ImageConstant.precachedPlaceHolder,
                   ),
           ),
           const SizedBox(
@@ -80,13 +78,11 @@ class FileMessageItem extends MessageItem {
                 width: 2,
               ),
               curr.isMyMessage
-                  ? Icon(Icons.done_all,
-                  color: curr.sendingStatus == MessageSendingStatus.succeeded
-                      ? skyblueColor
-                      : greyColor4,
-                  size: 16.0)
-                  : const SizedBox.shrink(),
+                  ? (Icon(curr.sendingStatusIcon,
+                      color: greyColor4,
+                      size: 16.0)
 
+              ) : const SizedBox.shrink(),
             ],
           )
         ],

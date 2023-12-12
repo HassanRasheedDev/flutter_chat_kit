@@ -1,8 +1,14 @@
+import 'dart:async';
+import 'dart:io';
+import 'dart:isolate';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_kit/controllers/channel_controller.dart';
 import 'package:flutter_chat_kit/main.dart';
 import 'package:flutter_chat_kit/models/channel_model.dart';
 import 'package:flutter_chat_kit/models/message_model.dart';
+import 'package:flutter_chat_kit/utils/extensions.dart';
 import 'package:flutter_chat_kit/views/channel/audio_file_item.dart';
 import 'package:flutter_chat_kit/views/channel/file_message_item.dart';
 import 'package:flutter_chat_kit/views/channel/message_input.dart';
@@ -10,6 +16,7 @@ import 'package:flutter_chat_kit/views/channel/no_audio_message_item.dart';
 import 'package:flutter_chat_kit/views/channel/sender_avatar_view.dart';
 import 'package:flutter_chat_kit/views/channel/text_field_voice_msg/text_voice_field.dart';
 import 'package:flutter_chat_kit/views/channel/user_message_item.dart';
+import 'package:get/get.dart';
 import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
 import 'package:sendbird_sdk/constant/command_type.dart';
 import 'package:sendbird_sdk/core/channel/group/group_channel.dart';
@@ -18,7 +25,10 @@ import 'package:sendbird_sdk/core/message/file_message.dart';
 import 'package:sendbird_sdk/core/message/user_message.dart';
 import 'package:sendbird_sdk/core/models/user.dart';
 
+import '../../db_helper.dart';
+import '../../di/service_locator.dart';
 import '../../l10n/string_en.dart';
+import '../../network/download_respository.dart';
 import '../../widgets/splash_widget.dart';
 import '../channel_list/channel_title_text_view.dart';
 import 'chat_ad_details.dart';
@@ -49,6 +59,7 @@ class _ChannelScreenState extends State<ChannelScreen> {
     });
     super.initState();
 
+    controller.updateChannelMessageReadCount();
   }
 
   @override
@@ -87,13 +98,20 @@ class _ChannelScreenState extends State<ChannelScreen> {
                               itemCount: controller.itemCount,
                               controller: controller.lstController,
                               reverse: true,
+                              physics: const AlwaysScrollableScrollPhysics(),
+                              addRepaintBoundaries: false,
+                              cacheExtent: double.infinity,
                               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                               padding: const EdgeInsets.only(top: 10, bottom: 10),
+
                               itemBuilder: (context, index) {
+
+
                                 final message = controller.messages[index];
                                 final prev = (index < controller.messages.length - 1)
                                     ? controller.messages[index + 1]
                                     : null;
+
                                 final next = index == 0 ? null : controller.messages[index - 1];
 
                                 if(message is MainMessage){
@@ -112,45 +130,44 @@ class _ChannelScreenState extends State<ChannelScreen> {
 
                                   }else if(message.type == CommandString.fileMessage){
                                     // Download Image
-
-
                                     if(message.mediaType == Strings.audioMediaType){
 
-                                      return FutureBuilder<String>(
-                                        future: controller.saveFileInAppDirectory(message, widget.channel.getOtherChannelMember()),
-                                        builder: (context, snapshot) {
-
-                                          if(snapshot.connectionState == ConnectionState.done && snapshot.data != null){
-                                            message.localFileUrl = snapshot.data.toString();
-                                            return AudioChatBubbleWidget(message: message);
-                                          }else{
-                                            return NoAudioMessageItem(
-                                                prev: prev,
-                                                next: next,
-                                                curr: message,
-                                                isMyMessage: message.isMyMessage,
-                                                model: controller);
-                                          }
-                                        },
+                                      return AudioChatBubbleWidget(
+                                        message: message,
+                                        key: Key(message.reqId.toString()),
+                                        channelController: controller,
+                                        channel: widget.channel,
+                                        prev: prev,
+                                        next: next,
+                                        curr: message,
                                       );
 
                                     }else{
-                                      controller.saveFileInAppDirectory(message, widget.channel.getOtherChannelMember());
+
+                                      // if(message.localFileUrl == null || message.localFileUrl?.isBlank == true){
+                                      //   initDownloadIsolate(message, widget.channel.getOtherChannelMember());
+                                      // }
+                                      //
+                                      // if(message.localFileUrl!= null && !channelImages.containsKey(message.localFileUrl) ){
+                                      //   channelImages.putIfAbsent(message.localFileUrl, () => File(message.localFileUrl.toString()));
+                                      // }
+
                                       return FileMessageItem(
+                                        key: Key(message.msgId.toString()),
                                         curr: message,
                                         prev: prev,
                                         next: next,
                                         controller: controller,
                                         isMyMessage: message.isMyMessage,
-                                        onPress: (pos) {
-                                          //
-                                        },
+                                        onPress: (pos) {},
                                         onLongPress: (pos) {},
                                       );
 
                                     }
                                   }
                                 }
+
+
                                 else {
                                   //undefined message type
                                   return const SplashWidget();
@@ -159,26 +176,11 @@ class _ChannelScreenState extends State<ChannelScreen> {
                             ),
                           ),
 
-
                           TextVoiceField(
                             channelController: controller,
                             onSendMessage: (message) {
                               controller.onSendUserMessage(message);}
                           )
-
-                          // MessageInput(
-                          //     onPressSend: (text){
-                          //         if(!controller.isLoading.value){
-                          //           controller.onSendUserMessage(text);
-                          //         }
-                          //       }, onChanged: (text){
-                          //         controller.onTyping(text != '');
-                          //     },
-                          //       onPressPlus: () {
-                          //       controller.showPlusMenu(context);
-                          //
-                          //   },)
-
                       ],
                   )
                 ),
@@ -191,53 +193,9 @@ class _ChannelScreenState extends State<ChannelScreen> {
     return widget.channel.getOtherChannelMember();
   }
 
-  Widget _buildTitle(BuildContext context, UserEngagementState ue) {
 
-    var member = getMemberUser();
-    List<Widget> headers = [
-              SenderAvatarView(
-                channelImageUrl: widget.channel.channelImageUrl,
-                userId: member?.userId ?? "",
-                width: 36,
-                height: 36,
-                onPressed: () => (){},
-              ),
-      const SizedBox(width: 4),
-    ];
-
-    headers.add( Text(widget.channel.recipientName ?? "",
-      maxLines: 1,
-      style: Theme.of(context).textTheme.titleSmall,
-      overflow: TextOverflow.ellipsis,
-    ));
-
-    // switch (ue) {
-    //   case UserEngagementState.typing:
-    //     headers.addAll([
-    //       const SizedBox(height: 3),
-    //       Text(
-    //         controller.typersText,
-    //         style: Theme.of(context).textTheme.titleSmall,
-    //       )
-    //     ]);
-    //     break;
-    //   default:
-    //     break;
-    // }
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisAlignment: MainAxisAlignment.start,
-      children: headers,
-    );
+  Future<void> initDownloadIsolate(message, member) async {
+    controller.saveFileInAppDirectory(message, member);
   }
+
 }
-
-
-
-/*
-  appBar: AppBar(
-            backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-            title: _buildTitle(context, controller.engagementState.value),
-          ),
- */

@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/material.dart';
+import 'package:flutter/src/widgets/icon_data.dart';
 import 'package:flutter_chat_kit/main.dart';
 import 'package:json_annotation/json_annotation.dart';
 import 'package:mime/mime.dart';
@@ -85,15 +87,13 @@ class MainMessage extends BaseMessage{
   get localFile => localFileUrl != null ? File(localFileUrl ?? "") : null;
 
   String? get secureUrl {
-    final sdk = SendbirdSdk().getInternal();
-    final eKey = sdk.sessionManager.getEKey();
-    if (eKey != null) {
-      return '$fileUrl?auth=$eKey';
-    }
-    return fileUrl;
+    return '$fileUrl?auth=$authenticationKey';
   }
 
   int get timeStampInt => int.tryParse(ts ?? "0") ?? 0;
+
+  IconData? get sendingStatusIcon => sendingStatus == MessageSendingStatus.pending ? Icons.access_time_outlined
+  : (sendingStatus == MessageSendingStatus.succeeded ? Icons.done_all : Icons.done_rounded);
 
   @override
   Map<String, dynamic> toJson() {

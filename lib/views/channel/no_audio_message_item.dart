@@ -30,17 +30,33 @@ class NoAudioMessageItem extends MessageItem {
 
   @override
   Widget get content =>  Container(
-      constraints: BoxConstraints(maxWidth: MediaQuery.of(mainContext).size.width * 0.7),
-      padding: const EdgeInsets.only(left: 10.0, right: 10, top: 8, bottom: 3),
+      constraints: BoxConstraints(maxWidth: MediaQuery.of(mainContext).size.width * 0.95),
+      padding: const EdgeInsets.only(left: 16.0, right: 10, top: 8, bottom: 3),
       decoration: BoxDecoration(
         color: lightgreyColor7,
         borderRadius: BorderRadius.circular(15),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+
           const SizedBox(
-            height: 36, width: 36,
+              height: 6
           ),
+
+          const SizedBox(
+            height: 36,
+            width: 36,
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(skyblueColor3),
+              strokeWidth: 2.0,
+            ),
+          ),
+
+          const SizedBox(
+            height: 6
+          ),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [

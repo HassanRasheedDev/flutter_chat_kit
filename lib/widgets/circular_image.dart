@@ -15,7 +15,7 @@ class CircularImageContainer extends StatelessWidget {
       child: FadeInImage.assetNetwork(
         placeholder: placeHolder,
         image: imageUrl,
-        fit: BoxFit.fill,
+        fit: BoxFit.cover,
         imageErrorBuilder: (context, error, stackTrace) {
           return Image.asset(
            placeHolder,

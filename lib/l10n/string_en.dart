@@ -14,4 +14,8 @@ class Strings {
   static var audioMediaType = "audio/mpeg";
   static var imageMediaType = "image/jpeg";
 
+  static var imageExtension = "jpg";
+  static var audioExtension = "mp3";
+
+
 }

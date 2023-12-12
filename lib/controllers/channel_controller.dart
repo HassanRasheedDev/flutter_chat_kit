@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_chat_kit/l10n/string_en.dart';
 import 'package:flutter_chat_kit/models/message_model.dart';
 import 'package:flutter_chat_kit/network/download_respository.dart';
 import 'package:flutter_chat_kit/utils/extensions.dart';
@@ -143,9 +144,9 @@ class ChannelController extends GetxController
           var message = MainMessage.fromDBResultSet(item);
           localList.add(message);
         }
-
         _messages.value.addAll(localList);
         isLoading.value = false;
+
       } else {
         final params = MessageListParams()
           ..isInclusive = false
@@ -274,11 +275,9 @@ class ChannelController extends GetxController
         final index = _messages.indexWhere((element) => (element.localId == localId || element.reqId == mainMessage.reqId));
         if (index != -1) {
           _messages.removeAt(index);
-          mainMessage.localFileUrl ??= _messages[index].localFileUrl;
         }
 
-
-
+        deleteMessageWithZeroId(mainMessage, deletePending, localId);
 
         // Insert single message in db if succeeded
         dbHelper.insertMessage(mainMessage);
@@ -286,8 +285,6 @@ class ChannelController extends GetxController
         _messages.value = [mainMessage, ..._messages];
         _messages.sort((a, b) => b.ts.compareTo(a.ts));
         markAsReadDebounce();
-
-        deleteMessageWithZeroId(mainMessage, deletePending, localId);
 
       }
 
@@ -299,9 +296,12 @@ class ChannelController extends GetxController
       mainMsg.isMyMessage = true;
       mainMsg.senderUserId = currentUser?.userId ?? "";
       mainMsg.senderProfileUrl = currentUser?.profileUrl;
+      if(mainMsg.mediaType == Strings.audioMediaType) {
+        (mainMsg).localFileUrl = file.path;
+      }
       int? id = await addMessageInDb(mainMsg);
-
       mainMsg.localId = id;
+
       _messages.value = [mainMsg, ..._messages];
 
     }
@@ -334,14 +334,14 @@ class ChannelController extends GetxController
 
 
   _scrollListener() {
-    if (lstController.offset >= lstController.position.maxScrollExtent &&
+    if ((lstController.offset + 200) >= lstController.position.maxScrollExtent &&
         !lstController.position.outOfRange && !isLoading.value) {
       loadMessages(timestamp: _messages.last.timeStampInt,);
     }
-    if (lstController.offset <= lstController.position.minScrollExtent &&
-        !lstController.position.outOfRange) {
-      //reach bottom
-    }
+    // if (lstController.offset <= lstController.position.minScrollExtent &&
+    //     !lstController.position.outOfRange) {
+    //   //reach bottom
+    // }
   }
 
 
@@ -431,6 +431,7 @@ class ChannelController extends GetxController
         }
       }
 
+
     }catch(e){
       if (kDebugMode) {
         print(e.toString());
@@ -487,13 +488,32 @@ class ChannelController extends GetxController
   Future<String> saveFileInAppDirectory(MainMessage message, User? user) async {
     // Saving files to local
     var localFilePath = "";
-    if(message.fileUrl?.isNotEmpty == true){
+    if(message.fileUrl?.isNotEmpty == true && !httpImageDownloadRequestsInQueue.contains(message.fileUrl)){
+
+      httpImageDownloadRequestsInQueue.add(message.fileUrl ?? "");
+
       localFilePath = await getIt.get<DownloadRepository>().getDownloadFilePath(message, user);
-      if(localFilePath.isNotEmpty == true){
+      if(localFilePath.isNotEmpty == true && !((localFilePath).isDirectoryPath(user?.userId)) ){
+        httpImageDownloadRequestsInQueue.remove(message.fileUrl);
+        updateLocalMessageListWithLocalUrl(localFilePath, message);
         dbHelper.updateLocalFilePath(localFilePath, message.ts ?? "");
       }
     }
+    
     return localFilePath;
+  }
+
+  void updateLocalMessageListWithLocalUrl(String localFilePath, MainMessage message) {
+    for(int i=0; i<_messages.length; i++){
+      var msg = _messages[i] as MainMessage;
+      if(msg.msgId == message.msgId && (msg.localFileUrl?.isBlank == true)){
+        msg.localFileUrl = localFilePath;
+      }
+    }
+  }
+
+  void updateChannelMessageReadCount() {
+    dbHelper.updateChannelMsgReadCnt(channel?.channelUrl);
   }
 
 }

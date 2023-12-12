@@ -115,7 +115,7 @@ class DBHelper{
   Future<List<Map<String, Object?>>> getChannels() async{
     Database? mydb = await db;
     if (kDebugMode) {
-      print('Query ====');
+      print('Query getChannels ====');
     }
     return await mydb!.query(_channelTableName, orderBy: "last_message_ts DESC");
   }
@@ -148,7 +148,7 @@ class DBHelper{
   Future<List<Map<String, Object?>>> getChannelMessages(String channelUrl,[ int timestamp = 0]) async{
     Database? mydb = await db;
     if (kDebugMode) {
-      print('Query ====');
+      print('Query getChannelMessages ====');
     }
     if(timestamp == 0){
       timestamp = DateTime.now().millisecondsSinceEpoch;
@@ -163,7 +163,7 @@ class DBHelper{
   Future<List<Map<String, Object?>>> getChannelPendingMessages(String channelUrl) async {
     Database? mydb = await db;
     if (kDebugMode) {
-      print('Query ====');
+      print('Query getChannelPendingMessages ====');
     }
     return await mydb!.query(_chatsTableName,
         where: "channel_url = ? and message_id = 0",
@@ -189,7 +189,7 @@ class DBHelper{
   Future<int> deletePendingMessages(int localId) async {
     Database? mydb = await db;
     if (kDebugMode) {
-      print('Query ====');
+      print('Query deletePendingMessages ====');
     }
     return await mydb!.delete(_chatsTableName,
         where: "id = ?",
@@ -201,7 +201,7 @@ class DBHelper{
 
     Database? mydb = await db;
     if (kDebugMode) {
-      print('Query ====');
+      print('Query getMessagesWithZeroIds ====');
     }
     return await mydb!.query(_chatsTableName,
       where: "message_id = 0"
@@ -216,6 +216,19 @@ class DBHelper{
     }
     return await mydb!.rawUpdate(
         'Update $_chatsTableName set local_file_url = \'$localFilePath\' where message_ts = $messageTs'
+    );
+  }
+
+  Future<void> updateChannelMsgReadCnt(channelUrl) async {
+    Database? mydb = await db;
+    if (kDebugMode) {
+      print('Update channel read count ====');
+    }
+
+    await mydb?.update(
+      _channelTableName, {"unread_count": "0"},
+      where: "channel_url = ?",
+      whereArgs: [channelUrl]
     );
   }
 
