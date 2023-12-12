@@ -16,6 +16,7 @@ import 'package:flutter_chat_kit/views/channel/no_audio_message_item.dart';
 import 'package:flutter_chat_kit/views/channel/sender_avatar_view.dart';
 import 'package:flutter_chat_kit/views/channel/text_field_voice_msg/text_voice_field.dart';
 import 'package:flutter_chat_kit/views/channel/user_message_item.dart';
+import 'package:flutter_chat_kit/views/channel/widgets/image_viewer.dart';
 import 'package:get/get.dart';
 import 'package:get/get_state_manager/src/rx_flutter/rx_obx_widget.dart';
 import 'package:sendbird_sdk/constant/command_type.dart';
@@ -93,6 +94,9 @@ class _ChannelScreenState extends State<ChannelScreen> {
                             child: DisclaimerMessage(),
                           ),
 
+                          controller.isLoading.value
+                          ? const CircularProgressIndicator() : const SizedBox.shrink(),
+
                           Expanded(
                             child: ListView.builder(
                               itemCount: controller.itemCount,
@@ -100,7 +104,7 @@ class _ChannelScreenState extends State<ChannelScreen> {
                               reverse: true,
                               physics: const AlwaysScrollableScrollPhysics(),
                               addRepaintBoundaries: false,
-                              cacheExtent: double.infinity,
+                              //cacheExtent: double.infinity,
                               keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
                               padding: const EdgeInsets.only(top: 10, bottom: 10),
 
@@ -144,14 +148,6 @@ class _ChannelScreenState extends State<ChannelScreen> {
 
                                     }else{
 
-                                      // if(message.localFileUrl == null || message.localFileUrl?.isBlank == true){
-                                      //   initDownloadIsolate(message, widget.channel.getOtherChannelMember());
-                                      // }
-                                      //
-                                      // if(message.localFileUrl!= null && !channelImages.containsKey(message.localFileUrl) ){
-                                      //   channelImages.putIfAbsent(message.localFileUrl, () => File(message.localFileUrl.toString()));
-                                      // }
-
                                       return FileMessageItem(
                                         key: Key(message.msgId.toString()),
                                         curr: message,
@@ -159,7 +155,13 @@ class _ChannelScreenState extends State<ChannelScreen> {
                                         next: next,
                                         controller: controller,
                                         isMyMessage: message.isMyMessage,
-                                        onPress: (pos) {},
+                                        onPress: (pos) {
+                                          Navigator.push(
+                                            context,
+                                            MaterialPageRoute(builder: (context) => ImageDialog(message: message),
+                                              fullscreenDialog: true,
+                                            ),);
+                                        },
                                         onLongPress: (pos) {},
                                       );
 

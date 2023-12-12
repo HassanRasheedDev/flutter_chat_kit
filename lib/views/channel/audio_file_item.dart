@@ -195,14 +195,15 @@ class AudioChatBubbleWidget extends StatelessWidget {
                       const SizedBox(
                         width: 2,
                       ),
+
+
                       message.isMyMessage
-                          ? Icon(Icons.done_all,
-                              color: message.sendingStatus ==
-                                      MessageSendingStatus.succeeded
-                                  ? skyblueColor
-                                  : greyColor4,
-                              size: 16.0)
-                          : const SizedBox.shrink(),
+                          ? (Icon(message.sendingStatusIcon,
+                          color: greyColor4,
+                          size: 16.0)
+
+                      ) : const SizedBox.shrink()
+
                     ],
                   )
                 ],

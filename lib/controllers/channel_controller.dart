@@ -57,19 +57,6 @@ class ChannelController extends GetxController
 
   Rx<UserEngagementState> get engagementState => UserEngagementState.none.obs;
 
-  // Rx<UserEngagementState> get engagementState {
-  //   try {
-  //     return channel?.getTypingUsers().isNotEmpty == true
-  //         ? UserEngagementState.typing.obs
-  //         : UserEngagementState.none.obs;
-  //   } catch (e) {
-  //     if (kDebugMode) {
-  //       print(e.toString());
-  //     }
-  //     return UserEngagementState.none.obs;
-  //   }
-  // }
-
   String? get lastSeenText {
     if (channel?.memberCount != 2) return null;
     final other =
@@ -178,17 +165,7 @@ class ChannelController extends GetxController
     }
   }
 
-  void onTyping(bool hasText) {
-    // if (!hasText) {
-    //   channel?.endTyping();
-    // } else {
-    //   channel?.startTyping();
-    //   _typingTimer?.cancel();
-    //   _typingTimer = Timer(const Duration(milliseconds: 3000), () {
-    //     channel?.endTyping();
-    //   });
-    // }
-  }
+  void onTyping(bool hasText) {}
 
   MessageState getMessageState(BaseMessage message) {
     if (message.sendingStatus != MessageSendingStatus.succeeded) {

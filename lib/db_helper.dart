@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter_chat_kit/l10n/string_en.dart';
 import 'package:flutter_chat_kit/models/message_model.dart';
 import 'package:flutter_chat_kit/utils/message_json_mapper.dart';
 import 'package:flutter_chat_kit/utils/sendbird_constants.dart';
@@ -229,6 +230,22 @@ class DBHelper{
       _channelTableName, {"unread_count": "0"},
       where: "channel_url = ?",
       whereArgs: [channelUrl]
+    );
+  }
+
+  Future<List<Map<String, Object?>>?> getAudioFilesWithNoLocalUrl() async {
+
+    Database? mydb = await db;
+    if (kDebugMode) {
+      print('Get image files with no local file Url ====');
+    }
+    return await mydb?.query(
+        _chatsTableName,
+        where: "local_file_url IS NULL and media_type = ?",
+        whereArgs: [Strings.imageMediaType],
+        orderBy: "message_ts DESC"
+      // _channelTableName,
+      // where: "local_file_url IS NULL and media_type = \'${Strings.imageMediaType}\'",
     );
   }
 

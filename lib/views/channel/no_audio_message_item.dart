@@ -69,14 +69,15 @@ class NoAudioMessageItem extends MessageItem {
               const SizedBox(
                 width: 2,
               ),
+
+
               curr.isMyMessage
-                  ? Icon(Icons.done_all,
-                  color: curr.sendingStatus ==
-                      MessageSendingStatus.succeeded
-                      ? skyblueColor
-                      : greyColor4,
+                  ? (Icon(curr.sendingStatusIcon,
+                  color: greyColor4,
                   size: 16.0)
-                  : const SizedBox.shrink(),
+
+              ) : const SizedBox.shrink()
+
             ],
           )
         ],

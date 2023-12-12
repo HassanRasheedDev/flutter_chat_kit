@@ -35,8 +35,9 @@ class TextVoiceField extends StatelessWidget {
             ),
             Expanded(
               child: Card(
+                color: Colors.white,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(94.0),
+                  borderRadius: BorderRadius.circular(10.0),
                 ),
                 elevation: 1,
                 child: Obx(
@@ -150,7 +151,7 @@ class TextVoiceField extends StatelessWidget {
                                   greyColor6),
 
                               contentPadding: const EdgeInsets.symmetric(
-                                  vertical: 16.0, horizontal: 17.0),
+                                  vertical: 16.0, horizontal: 14.0),
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(94.0),
                                 borderSide: const BorderSide(
@@ -161,7 +162,7 @@ class TextVoiceField extends StatelessWidget {
                               suffixIcon: chatTextVoiceController
                                       .isTextEmpty.value
                                   ? Padding(
-                                      padding: const EdgeInsets.only(right: 16),
+                                      padding: const EdgeInsets.only(right: 5),
                                       child: Row(
                                         mainAxisAlignment:
                                             MainAxisAlignment.end,
