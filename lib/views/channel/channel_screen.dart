@@ -134,7 +134,7 @@ class _ChannelScreenState extends State<ChannelScreen> {
 
                                   }else if(message.type == CommandString.fileMessage){
                                     // Download Image
-                                    if(message.mediaType == Strings.audioMediaType){
+                                    if(message.mediaType == Strings.audioMediaTypeMp4 || message.mediaType == Strings.audioMediaTypeMpeg){
 
                                       return AudioChatBubbleWidget(
                                         message: message,

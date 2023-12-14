@@ -7,6 +7,7 @@ import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 
+import '../l10n/string_en.dart';
 import 'channel_controller.dart';
 
 
@@ -178,7 +179,7 @@ class ChatTextVoiceController extends GetxController  {
       final Directory appCacheDir = await getTemporaryDirectory();
       // Create a unique file name for the image
       final String fileName = DateTime.now().millisecondsSinceEpoch.toString();
-      final String filePath = type == "Image" ? '${appCacheDir.path}/$fileName.jpg':'${appCacheDir.path}/$fileName.mp3';
+      final String filePath = type == "Image" ? '${appCacheDir.path}/$fileName.jpg' :type == "AudioMessage"? '${appCacheDir.path}/$fileName.${Strings.audioExtensionM4a}' :'${appCacheDir.path}/$fileName.${Strings.audioExtensionMp3}';
 
       // Copy the selected image to the app's cache directory
       await messageFile.copy(filePath);

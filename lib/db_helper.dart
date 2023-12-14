@@ -1,11 +1,14 @@
 
 import 'dart:convert';
+import 'dart:io';
+
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_chat_kit/l10n/string_en.dart';
 import 'package:flutter_chat_kit/models/message_model.dart';
 import 'package:flutter_chat_kit/utils/message_json_mapper.dart';
 import 'package:flutter_chat_kit/utils/sendbird_constants.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sendbird_sdk/core/channel/group/group_channel.dart';
 import 'package:sendbird_sdk/core/message/base_message.dart';
 import 'package:sqflite/sqflite.dart';
@@ -29,9 +32,18 @@ class DBHelper{
   }
 
   Future<Database?> initDb() async {
-
+    String path;
     try {
-      String path = '${await getDatabasesPath()}_sendbird_chat.db';
+      if (Platform.isIOS) {
+        Directory documentsDirectory = await getApplicationDocumentsDirectory();
+        path = '${documentsDirectory}_sendbird_chat.db';
+        print("pathsss");
+      print(path);
+      }
+     else{
+         path = '${await getDatabasesPath()}_sendbird_chat.db';
+      }
+
       _db = await openDatabase(path,
           version: _version, onCreate: _onCreate, onUpgrade: _onUpgrade);
 

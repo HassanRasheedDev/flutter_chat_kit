@@ -273,7 +273,7 @@ class ChannelController extends GetxController
       mainMsg.isMyMessage = true;
       mainMsg.senderUserId = currentUser?.userId ?? "";
       mainMsg.senderProfileUrl = currentUser?.profileUrl;
-      if(mainMsg.mediaType == Strings.audioMediaType) {
+      if(mainMsg.mediaType == Strings.audioMediaTypeMpeg ||mainMsg.mediaType == Strings.audioMediaTypeMp4 ) {
         (mainMsg).localFileUrl = file.path;
       }
       int? id = await addMessageInDb(mainMsg);
@@ -470,7 +470,7 @@ class ChannelController extends GetxController
       httpImageDownloadRequestsInQueue.add(message.fileUrl ?? "");
 
       localFilePath = await getIt.get<DownloadRepository>().getDownloadFilePath(message, user);
-      if(localFilePath.isNotEmpty == true && !((localFilePath).isDirectoryPath(user?.userId)) ){
+      if(localFilePath.isNotEmpty == true /*&& !((localFilePath).isDirectoryPath(user?.userId)) */){
         httpImageDownloadRequestsInQueue.remove(message.fileUrl);
         updateLocalMessageListWithLocalUrl(localFilePath, message);
         dbHelper.updateLocalFilePath(localFilePath, message.ts ?? "");

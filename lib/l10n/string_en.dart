@@ -11,11 +11,13 @@ class Strings {
   static var camera = "Camera";
   static var document = "Document";
 
-  static var audioMediaType = "audio/mpeg";
+  static var audioMediaTypeMpeg = "audio/mpeg";
+  static var audioMediaTypeMp4 = "audio/mp4";
   static var imageMediaType = "image/jpeg";
 
   static var imageExtension = "jpg";
-  static var audioExtension = "mp3";
+  static var audioExtensionMp3 = "mp3";
+  static var audioExtensionM4a = "m4a";
 
 
 }
